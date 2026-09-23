@@ -43,6 +43,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .brand .rev { display: inline-block; transform: scaleX(-1); opacity: .38; margin-left: 1px; font-style: italic; }
 .chip { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 7px 9px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .chip.live { color: var(--chalk); }
+button.chip { display: inline-flex; align-items: center; gap: 3px; padding-right: 6px; }
+.chip .caret { width: 13px; height: 13px; stroke-width: 2; opacity: .7; }
 .chip.live::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--tight); margin-right: 6px; vertical-align: 1px; animation: pulse 1.6s infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
 .iconbtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -58,6 +60,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .status .spin { width: 12px; height: 12px; border: 2px solid var(--line-2); border-top-color: var(--tape); border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .status.fade { opacity: 0; pointer-events: none; }
+.status.act { cursor: pointer; border-color: rgba(255,123,103,.45); }
+.status.act .t { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(236,232,225,.4); }
 .turnhint { position: absolute; left: 50%; top: calc(var(--safe-t) + 62px); transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 8px;
   padding: 9px 14px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; white-space: nowrap;
   pointer-events: none; transition: opacity .45s; }
@@ -69,6 +73,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 /* ---------- bottom dock ---------- */
 .dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 0 calc(var(--safe-b) + 10px);
   background: linear-gradient(to top, rgba(14,16,18,.9) 55%, rgba(14,16,18,0)); }
+/* over the camera or a photo, the panel stays light so the mirror shows behind the controls */
+#app.see-through .dock { background: linear-gradient(to top, rgba(14,16,18,.6), rgba(14,16,18,.28) 45%, rgba(14,16,18,0)); }
 .fitbar { display: flex; align-items: center; gap: 10px; padding: 18px 16px 10px; min-height: 44px; }
 .tape { flex: 1; min-width: 0; height: 38px; border-radius: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; display: flex; align-items: stretch;
   background-color: var(--tape); color: var(--tape-ink);
@@ -106,8 +112,15 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .tag .mt { font: 500 9.5px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: rgba(42,38,32,.62); margin-top: 3px; white-space: nowrap; }
 .tag[aria-pressed="true"] { background: var(--tape); }
 .tag[aria-pressed="true"] .mt { color: rgba(23,19,10,.75); }
-.tag .edit { position: absolute; top: 3px; right: 4px; width: 22px; height: 22px; min-height: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(23,19,10,.12); }
-.tag .edit svg { width: 13px; height: 13px; }
+.tagwrap { flex: none; position: relative; scroll-snap-align: start; }
+.tagwrap .edit { position: absolute; top: 12px; right: 0; width: 34px; height: 34px; min-height: 0; display: grid; place-items: center; color: var(--paper-ink); }
+.tagwrap .edit::before { content: ''; position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(23,19,10,.12); }
+.tagwrap .edit svg { width: 13px; height: 13px; position: relative; }
+/* the worn item whose size is on the tape */
+.tag.active { box-shadow: inset 0 -4px 0 var(--tape-ink), 0 4px 14px rgba(0,0,0,.35); }
+.tag.looks { background: var(--ink-3); color: var(--chalk); }
+.tag.looks img { object-fit: cover; border-radius: 6px; }
+.tag.looks .mt { color: var(--muted); }
 .tag.add { background: transparent; color: var(--chalk); border: 1.5px dashed var(--line-2); clip-path: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; box-shadow: none; padding: 10px 8px; }
 .tag.add::before { display: none; }
 .tag.add .plus { width: 38px; height: 38px; border-radius: 50%; background: var(--tape); color: var(--tape-ink); display: grid; place-items: center; }
@@ -187,6 +200,25 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .switch[aria-checked="true"]::after { transform: translateX(18px); background: var(--tape-ink); }
 input[type=range] { width: 100%; accent-color: var(--tape); }
 
+/* try-on modes */
+.modes { display: grid; gap: 8px; }
+.modeopt { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: center; text-align: left; padding: 14px; border-radius: 14px; background: var(--ink-3); border: 1px solid var(--line); font-weight: 600; font-size: 15px; }
+.modeopt small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.modeopt svg.i { color: var(--tape); }
+.modeopt.on { border-color: rgba(244,196,48,.55); background: rgba(244,196,48,.08); }
+/* my looks */
+.looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.look { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.look img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; background: #000; border: 1px solid var(--line); }
+.look span { font-size: 13px; font-weight: 600; }
+.look small { display: block; font-weight: 400; color: var(--faint); font-size: 11.5px; }
+.lookitems { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; }
+.lookitems li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.lookitems li:last-child { border-bottom: 0; }
+.lookitems li span { flex: 1; min-width: 0; }
+.lookitems li small { display: block; color: var(--faint); font-size: 11.5px; }
+.lookitems li b { font: 600 13px var(--mono); color: var(--tape); }
+.lookitems li em { font-size: 11.5px; color: var(--tight); font-style: normal; }
 /* snapshot */
 .shot { display: block; width: 100%; max-height: 52vh; object-fit: contain; border-radius: 12px; background: #000; -webkit-touch-callout: default; }
 .stylist { font-size: 14.5px; line-height: 1.5; color: var(--chalk); white-space: pre-wrap; margin-top: 12px; }
@@ -208,7 +240,7 @@ input[type=range] { width: 100%; accent-color: var(--tape); }
 .howto li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; font-size: 13.5px; color: var(--muted); }
 .howto li b { color: var(--chalk); font-weight: 600; }
 .howto .k { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; font: 500 11px var(--mono); color: var(--tape); }
-.pastezone { margin-top: 12px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 12px; color: var(--muted); font-size: 13px; text-align: center; -webkit-user-select: text; user-select: text; outline: none; }
+.pastezone { margin-top: 12px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 12px; color: var(--muted); font-size: 13px; text-align: center; -webkit-user-select: text; user-select: text; outline: none; font-size: 16px; }
 .busy { padding: 60px 16px; text-align: center; color: var(--muted); }
 .busy .spin { width: 28px; height: 28px; border: 3px solid var(--line-2); border-top-color: var(--tape); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px; }
 .edit { display: flex; flex-direction: column; min-height: 100%; }
@@ -229,11 +261,12 @@ input[type=range] { width: 100%; accent-color: var(--tape); }
 .tool { flex: 1; height: 44px; border-radius: 10px; background: var(--ink-3); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; color: var(--muted); }
 .tool svg { width: 18px; height: 18px; }
 .tool[aria-pressed="true"] { background: var(--chalk); color: var(--ink); }
-.namefield { flex: 1; min-width: 0; height: 40px; border-radius: 10px; background: var(--ink-3); border: 1px solid var(--line); padding: 0 12px; outline: none; font-size: 15px; }
+.namefield { flex: 1; min-width: 0; height: 40px; border-radius: 10px; background: var(--ink-3); border: 1px solid var(--line); padding: 0 12px; outline: none; font-size: 16px; }
 .brush { display: flex; align-items: center; gap: 8px; font: 500 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .08em; }
 
 /* ---------- misc ---------- */
-.countdown { position: absolute; inset: 0; display: grid; place-items: center; z-index: 15; pointer-events: none; font: italic 400 140px/1 var(--display); color: var(--chalk); text-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.countdown { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 15; pointer-events: none; font: italic 400 140px/1 var(--display); color: var(--chalk); text-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.countdown small { font: 500 13px/1 var(--ui); font-style: normal; letter-spacing: .02em; color: var(--chalk); background: var(--glass-2); padding: 8px 12px; border-radius: 999px; text-shadow: none; }
 .flash { position: absolute; inset: 0; background: #fff; z-index: 16; pointer-events: none; animation: flash .45s ease-out forwards; }
 @keyframes flash { to { opacity: 0; } }
 .guide { position: absolute; inset: 0; z-index: 4; pointer-events: none; display: grid; place-items: center; }
@@ -273,6 +306,7 @@ input[type=range] { width: 100%; accent-color: var(--tape); }
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12H5v8h14v-8h-1"/></symbol>
   <symbol id="i-turn" viewBox="0 0 24 24"><path d="M12 3.5v7"/><path d="M8.6 9.2C5.3 9.8 3 11 3 12.5c0 2.2 4 4 9 4s9-1.8 9-4c0-1.5-2.3-2.7-5.6-3.3"/><path d="m10.3 14.5 1.9 2-1.9 2"/></symbol>
+  <symbol id="i-caret" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
   <symbol id="i-hanger" viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 1 2-2c0 1.2-2 1.6-2 3.2V9l8.6 6.2c.8.6.4 1.8-.6 1.8H4c-1 0-1.4-1.2-.6-1.8L12 9"/></symbol>
 </svg>
 
@@ -286,7 +320,7 @@ input[type=range] { width: 100%; accent-color: var(--tape); }
 
   <header class="topbar">
     <div class="brand">Digital <em>Mirror</em></div>
-    <span id="modeChip" class="chip">Demo</span>
+    <button id="modeChip" class="chip" aria-label="Demo mannequin — change"><span class="t">Demo</span><svg class="i caret" aria-hidden="true"><use href="#i-caret"/></svg></button>
     <button id="btnSpin" class="iconbtn" aria-label="Turn the mannequin all the way round" title="Turn it round"><svg class="i"><use href="#i-turn"/></svg></button>
     <button id="btnFlip" class="iconbtn" aria-label="Switch camera" hidden><svg class="i"><use href="#i-flip"/></svg></button>
     <button id="btnMenu" class="iconbtn" aria-label="Settings"><svg class="i"><use href="#i-dots"/></svg></button>
@@ -316,7 +350,7 @@ input[type=range] { width: 100%; accent-color: var(--tape); }
     <div class="controls">
       <div class="left"><button id="btnFit" class="pillbtn"><svg class="i"><use href="#i-ruler"/></svg>Fit</button></div>
       <button id="btnShutter" class="shutter" aria-label="Take a photo of the look"></button>
-      <div class="right"><button id="btnTimer" class="pillbtn" aria-label="Self-timer"><svg class="i"><use href="#i-timer"/></svg><span class="n" id="timerN">Off</span></button></div>
+      <div class="right"><button id="btnTimer" class="pillbtn" aria-label="Self-timer: off"><svg class="i"><use href="#i-timer"/></svg><span class="n" id="timerN">Off</span></button></div>
     </div>
     <div class="rail" id="rail" aria-label="Wardrobe"></div>
   </section>
@@ -401,6 +435,7 @@ class OneEuro {
 
 // ---------- Body tracker: smoothing, self-calibration, synthesis of missing joints ----------
 class Tracker {
+  static serial = 0;
   constructor() { this.reset(); }
   reset() {
     this.f = Array.from({ length: 17 }, () => ({ fx: new OneEuro(1.1, 0.012), fy: new OneEuro(1.1, 0.012), s: 0, p: null }));
@@ -428,6 +463,7 @@ class Tracker {
     else { this.calibrate(kp, still); yaw = this.yawEst.update(kp, this.cal, t, still); }
     const kb = raw.yaw == null && this.yawEst.swap ? LR.map(i => kp[i]) : kp;
     this.body = deriveBody(kb, this.cal, yaw, this.yawEst.wf);
+    this.body.serial = ++Tracker.serial;
     // facing away (with hysteresis so limbs don't flicker between their front and back mapping at side-on)
     if (this.body.valid) this.away = this.away ? this.body.cy < 0.12 : this.body.cy < -0.12;
     this.body.away = this.away;
@@ -1283,10 +1319,15 @@ function makeBack(g, R) {
       }
     }
   }
-  const c = mkCanvas(g.tex.width, g.tex.height);
   const tmp = mkCanvas(w, h); tmp.getContext('2d').putImageData(out, 0, 0);
-  c.getContext('2d').drawImage(tmp, 0, 0);
-  return { tex: c, grid, canvas: tmp };
+  return { canvas: tmp, grid };
+}
+// textures are padded to powers of two (mipmaps on WebGL1); the padded copy lives only while uploading
+const pot = n => { let p = 1; while (p < n) p *= 2; return p; };
+function potCanvas(src) {
+  const tw = pot(src.width), th = pot(src.height);
+  if (tw === src.width && th === src.height) return src;
+  const c = mkCanvas(tw, th); c.getContext('2d').drawImage(src, 0, 0); return c;
 }
 
 /* ---- wrapping the front-facing fit round a turned body ----
@@ -1469,8 +1510,22 @@ void main(){
 class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
+    this.items = new Map(); // garment id -> {tex, rig, vbo, uvbo, ibo}
+    this.srcW = 1; this.srcH = 1; this.srcVer = 0; this.maskVer = 0;
+    this.capA = new Float32Array(32); this.capR = new Float32Array(16);
+    this.lost = false; this.onLost = null; this.onRestore = null;
+    this.initGL();
+    // iOS drops WebGL contexts under memory pressure or in the background: rebuild everything when it comes back
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; if (this.onLost) this.onLost(); });
+    canvas.addEventListener('webglcontextrestored', () => {
+      try { this.items = new Map(); this.initGL(); this.lost = false; if (this.onRestore) this.onRestore(); }
+      catch (e) { console.warn('[mirror] could not restore the display', e); }
+    });
+  }
+  initGL() {
     const opts = { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' };
-    const gl = canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts);
+    const canvas = this.canvas;
+    const gl = this.gl || canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts) || canvas.getContext('experimental-webgl', opts);
     if (!gl) throw new Error('WebGL is not available on this device.');
     this.gl = gl; this.gl2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
     this.uintIdx = this.gl2 || !!gl.getExtension('OES_element_index_uint');
@@ -1484,10 +1539,7 @@ class Renderer {
     gl.bindTexture(gl.TEXTURE_2D, this.tMask);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
     this.fGar = this.fbo(4, 4); this.fBlur = this.fbo(8, 8); this.fBlur2 = this.fbo(8, 8); this.fSnap = null;
-    this.items = new Map(); // garment id -> {tex, rig, vbo, uvbo, ibo}
-    this.srcW = 1; this.srcH = 1;
-    this.lost = false;
-    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; });
+    this.srcVer++; this.maskVer++;
   }
   prog(vs, fs, attrs) {
     const gl = this.gl;
@@ -1528,7 +1580,7 @@ class Renderer {
   upload(canvas) {
     const gl = this.gl, t = this.tex(gl.LINEAR_MIPMAP_LINEAR);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, potCanvas(canvas));
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.generateMipmap(gl.TEXTURE_2D);
     return t;
@@ -1536,11 +1588,16 @@ class Renderer {
   addGarment(g) {
     const gl = this.gl;
     this.removeGarment(g.id);
-    // the back of the garment: a real back photo if there is one, else made from the front
-    let rig = buildRig(g);
-    if (!g.back) { try { g.back = makeBack(g, rig); } catch (e) { console.warn('[mirror] no back view', e); g.back = null; } }
-    if (g.back && g.back.grid) rig = buildRig(Object.assign({}, g, { alphaGrid: g.back.grid }));
-    const t = this.upload(g.tex), tb = g.back ? this.upload(g.back.tex) : null;
+    // the back of the garment: a real back photo if there is one, else made from the front.
+    // Both, and the mesh, are worked out once per item and kept for the next time it's worn.
+    let rig = g.rigCache;
+    if (!rig) {
+      rig = buildRig(g);
+      if (g.back === undefined) { try { g.back = makeBack(g, rig); } catch (e) { console.warn('[mirror] no back view', e); g.back = null; } }
+      if (g.back && g.back.grid) rig = buildRig(Object.assign({}, g, { alphaGrid: g.back.grid }));
+      g.rigCache = rig;
+    }
+    const t = this.upload(g.canvas), tb = g.back ? this.upload(g.back.canvas) : null;
     let idx = rig.idx;
     if (idx instanceof Uint32Array && !this.uintIdx) idx = new Uint16Array(idx); // fallback (very large meshes only)
     const buf = (data, usage) => { const o = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o); gl.bufferData(gl.ARRAY_BUFFER, data, usage); return o; };
@@ -1598,18 +1655,22 @@ class Renderer {
     front.forEach(r => draw(r.l1)); front.forEach(r => draw(r.l2));
   }
   setMask(data, w, h) {
-    const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.tMask);
+    if (this.lost) return;
+    const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.tMask); this.maskVer++;
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     if (this.gl2) gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, w, h, 0, gl.RED, gl.UNSIGNED_BYTE, data);
     else gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, w, h, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, data);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
     this.maskOK = true;
   }
-  clearMask() { this.maskOK = false; }
-  uploadSource(src, w, h) {
+  clearMask() { this.maskOK = false; this.maskVer++; }
+  // blur = false skips the fold-shading passes (the demo, or shading turned off)
+  uploadSource(src, w, h, blur = true) {
+    if (this.lost) return;
     const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.tSrc);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
-    this.srcW = w; this.srcH = h;
+    this.srcW = w; this.srcH = h; this.srcVer++;
+    if (!blur) return;
     // blur passes (source-space): fine folds (1/6 size) and the broad light level (1/28 size)
     const pass = (dst, from, div) => {
       const bw = Math.max(8, Math.round(w / div)), bh = Math.max(8, Math.round(h / div));
@@ -1630,10 +1691,14 @@ class Renderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   // display transform (source px -> target)
-  layout(tw, th, fit, mirror) {
+  layout(tw, th, fit, mirror, focus) {
     const sw = this.srcW, sh = this.srcH;
     const s = fit === 'contain' ? Math.min(tw / sw, th / sh) : Math.max(tw / sw, th / sh);
-    const dw = sw * s, dh = sh * s, dx = (tw - dw) / 2, dy = (th - dh) / 2;
+    const dw = sw * s, dh = sh * s;
+    let dx = (tw - dw) / 2, dy = (th - dh) / 2;
+    // filling the screen crops the picture: keep the focus (the person in a photo) in the middle, within the picture
+    if (focus && !mirror && dw > tw) dx = clamp(tw / 2 - focus.x * s, tw - dw, 0);
+    if (focus && !mirror && dh > th) dy = clamp(th / 2 - focus.y * s, th - dh, 0);
     const xf = mirror ? [-2 * s / tw, -2 * s / th, 1 - 2 * dx / tw, 1 - 2 * dy / th] : [2 * s / tw, -2 * s / th, 2 * dx / tw - 1, 1 - 2 * dy / th];
     const inv = mirror ? [-tw / (s * sw), -th / (s * sh), (tw - dx) / (s * sw), (th - dy) / (s * sh)] : [tw / (s * sw), -th / (s * sh), -dx / (s * sw), (th - dy) / (s * sh)];
     return { s, dx, dy, xf, inv, mirror, tw, th };
@@ -1643,7 +1708,7 @@ class Renderer {
     const gl = this.gl;
     if (this.lost) return null;
     const tw = target ? target.w : this.canvas.width, th = target ? target.h : this.canvas.height;
-    const L = this.layout(tw, th, target ? 'cover' : scene.fit, target ? false : scene.mirror);
+    const L = this.layout(tw, th, target ? 'cover' : scene.fit, target ? false : scene.mirror, target ? null : scene.focus);
     // 1) garments into the garment layer
     const fg = target ? target.gar : this.fGar;
     this.sizeFbo(fg, tw, th);
@@ -1681,8 +1746,8 @@ class Renderer {
     gl.uniform1f(pc.u.uHeadOn, oc.head ? 1 : 0);
     gl.uniform4fv(pc.u.uHead, oc.head ? oc.head : [0, 0, 1, 1]);
     gl.uniform2fv(pc.u.uHeadAxis, oc.headAxis || [0, 1]);
-    const capA = new Float32Array(32), capR = new Float32Array(16);
-    (oc.caps || []).slice(0, 8).forEach((c, i) => { capA.set([c.a.x, c.a.y, c.b.x, c.b.y], i * 4); capR.set([c.r, c.skin ? 1 : 0], i * 2); });
+    const capA = this.capA.fill(0), capR = this.capR.fill(0);
+    (oc.caps || []).slice(0, 8).forEach((c, i) => { capA[i * 4] = c.a.x; capA[i * 4 + 1] = c.a.y; capA[i * 4 + 2] = c.b.x; capA[i * 4 + 3] = c.b.y; capR[i * 2] = c.r; capR[i * 2 + 1] = c.skin ? 1 : 0; });
     gl.uniform4fv(pc.u.uCapA, capA); gl.uniform2fv(pc.u.uCapR, capR);
     gl.uniform3fv(pc.u.uSkin, oc.skin || [0, 0, 0]);
     this.drawFull();
@@ -2512,9 +2577,8 @@ function prepareGarment(meta, srcCanvas) {
   const w = Math.max(8, Math.round(cw * sc)), h = Math.max(8, Math.round(ch * sc));
   const img = mkCanvas(w, h); const ix = img.getContext('2d');
   ix.imageSmoothingQuality = 'high'; ix.drawImage(srcCanvas, x0, y0, cw, ch, 0, 0, w, h);
-  const T = n => { let p = 1; while (p < n) p *= 2; return p; };
-  const tw = T(w), th = T(h);
-  const tex = mkCanvas(tw, th); tex.getContext('2d').drawImage(img, 0, 0);
+  // the texture is padded to powers of two only while it's uploaded; the scale maps UVs into that padding
+  const tw = pot(w), th = pot(h);
   // alpha grid for mesh coverage
   const gw = 128, gh = Math.max(8, Math.round(128 * h / w));
   const small = mkCanvas(gw, gh); const sx = small.getContext('2d'); sx.drawImage(img, 0, 0, gw, gh);
@@ -2523,7 +2587,7 @@ function prepareGarment(meta, srcCanvas) {
   const map = p => (p ? P((p.x - x0) * sc, (p.y - y0) * sc) : p);
   const pts = {}; for (const kk in meta.pts) pts[kk] = map(meta.pts[kk]);
   const sleeveHW = meta.sleeveHW ? { L: meta.sleeveHW.L * sc, R: meta.sleeveHW.R * sc } : null;
-  return Object.assign({}, meta, { canvas: img, w, h, tex, texScale: P(w / tw, h / th), alphaGrid: { w: gw, h: gh, data: ag }, pts, torsoW: meta.torsoW ? meta.torsoW * sc : null, sleeveHW });
+  return Object.assign({}, meta, { canvas: img, w, h, texScale: P(w / tw, h / th), alphaGrid: { w: gw, h: gh, data: ag }, pts, torsoW: meta.torsoW ? meta.torsoW * sc : null, sleeveHW });
 }
 
 'use strict';
@@ -2538,7 +2602,10 @@ const Cut = {
   // decode a File/Blob into a canvas (max side `max`)
   async decode(file, max = 1400) {
     let bmp = null;
-    try { bmp = await createImageBitmap(file); } catch (e) { bmp = null; }
+    // a very large photo (24-48 MP) is scaled while it's decoded where the browser can, instead of
+    // unpacking a couple of hundred MB first
+    if (file.size > 6e6) { try { bmp = await createImageBitmap(file, { resizeWidth: max * 2, resizeQuality: 'high' }); } catch (e) { bmp = null; } }
+    if (!bmp) { try { bmp = await createImageBitmap(file); } catch (e) { bmp = null; } }
     if (!bmp) {
       bmp = await new Promise((res, rej) => {
         const url = URL.createObjectURL(file); const im = new Image();
@@ -3374,38 +3441,52 @@ function finishGarment(state) {
 
 'use strict';
 /* =====================================================================
-   Store: per-device wardrobe (IndexedDB) + profile/settings (localStorage).
-   Everything is best-effort: the app works without storage.
+   Store: per-device wardrobe and saved looks (IndexedDB) + profile and
+   settings (localStorage). Everything is best-effort: the app works
+   without storage.
    ===================================================================== */
 const Store = {
-  db: null,
-  async open() {
-    if (this.db !== null) return this.db;
-    this.db = false;
-    try {
-      this.db = await new Promise((res, rej) => {
-        const r = indexedDB.open('digital-mirror', 1);
-        r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('wardrobe')) d.createObjectStore('wardrobe', { keyPath: 'id' }); };
-        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-        setTimeout(() => rej(new Error('timeout')), 4000);
+  dbP: null,
+  // one open for everyone who asks; a slow first open (a known WebKit quirk) is waited for, not
+  // mistaken for "no storage", and a failed open is tried again next time
+  open() {
+    if (!this.dbP) {
+      this.dbP = new Promise(res => {
+        let done = false;
+        const finish = v => { if (!done) { done = true; res(v); } };
+        let r;
+        try { r = indexedDB.open('digital-mirror', 2); } catch (e) { return finish(false); }
+        r.onupgradeneeded = () => {
+          const d = r.result;
+          if (!d.objectStoreNames.contains('wardrobe')) d.createObjectStore('wardrobe', { keyPath: 'id' });
+          if (!d.objectStoreNames.contains('looks')) d.createObjectStore('looks', { keyPath: 'id' });
+        };
+        r.onsuccess = () => { const d = r.result; d.onversionchange = () => { d.close(); this.dbP = null; }; if (done) { d.close(); return; } finish(d); };
+        r.onerror = () => finish(false);
+        r.onblocked = () => finish(false);
+        setTimeout(() => finish(false), 10000);
       });
-    } catch (e) { this.db = false; }
-    return this.db;
+      this.dbP.then(d => { if (!d) this.dbP = null; });
+    }
+    return this.dbP;
   },
-  async all() {
-    const d = await this.open(); if (!d) return [];
+  async tx(store, mode, fn) {
+    const d = await this.open(); if (!d) return null;
     try {
-      return await new Promise((res, rej) => { const t = d.transaction('wardrobe', 'readonly').objectStore('wardrobe').getAll(); t.onsuccess = () => res(t.result || []); t.onerror = () => rej(t.error); });
-    } catch (e) { return []; }
+      return await new Promise((res, rej) => {
+        const t = d.transaction(store, mode), s = t.objectStore(store); let out;
+        const r = fn(s); if (r) r.onsuccess = () => { out = r.result; };
+        t.oncomplete = () => res(out === undefined ? true : out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+      });
+    } catch (e) { return null; }
   },
-  async put(item) {
-    const d = await this.open(); if (!d) return false;
-    try { await new Promise((res, rej) => { const t = d.transaction('wardrobe', 'readwrite'); t.objectStore('wardrobe').put(item); t.oncomplete = res; t.onerror = () => rej(t.error); }); return true; } catch (e) { return false; }
-  },
-  async del(id) {
-    const d = await this.open(); if (!d) return false;
-    try { await new Promise((res, rej) => { const t = d.transaction('wardrobe', 'readwrite'); t.objectStore('wardrobe').delete(id); t.oncomplete = res; t.onerror = () => rej(t.error); }); return true; } catch (e) { return false; }
-  },
+  async all() { return (await this.tx('wardrobe', 'readonly', s => s.getAll())) || []; },
+  async put(item) { return !!(await this.tx('wardrobe', 'readwrite', s => { s.put(item); })); },
+  async del(id) { return !!(await this.tx('wardrobe', 'readwrite', s => { s.delete(id); })); },
+  // saved looks: a photo of the outfit plus what was worn, in which sizes
+  async looks() { const l = (await this.tx('looks', 'readonly', s => s.getAll())) || []; return l.sort((a, b) => b.created - a.created); },
+  async putLook(look) { return !!(await this.tx('looks', 'readwrite', s => { s.put(look); })); },
+  async delLook(id) { return !!(await this.tx('looks', 'readwrite', s => { s.delete(id); })); },
   get(key, dflt) { try { const v = localStorage.getItem('dm.' + key); return v == null ? dflt : JSON.parse(v); } catch (e) { return dflt; } },
   set(key, v) { try { localStorage.setItem('dm.' + key, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
@@ -3695,13 +3776,21 @@ const App = {
   settings: null, profile: null,
   tint: [1, 1, 1], skin: null, timer: 0, measuring: null, capabilities: {},
   visionReady: false, visionLoading: null,
+  modeGen: 0, camTok: 0, clipTok: 0, lastSig: '', stageW: 1, stageH: 1, looks: [],
 
   async init() {
-    this.settings = Object.assign({ mirror: true, light: true, shade: 0.2, occlusion: true, accurate: false }, Store.get('settings', {}));
+    this.settings = Object.assign({ mirror: true, fill: true, light: true, shade: 0.2, occlusion: true, accurate: false }, Store.get('settings', {}));
     this.profile = Object.assign({ sizing: 'womens', height: null, chest: null, waist: null, hips: null, inseam: null, usual: 'M', est: {} }, Store.get('profile', {}));
     this.frame = mkCanvas(2, 2); this.fctx = this.frame.getContext('2d', { willReadFrequently: false });
     try { this.renderer = new Renderer($('#stage')); }
     catch (e) { this.fatal('This device can’t run the 3D mirror view (WebGL is off or unavailable).'); return; }
+    // the phone can take the display away (memory pressure, the app in the background): put it all back
+    this.renderer.onLost = () => this.setStatus('Restoring the mirror…', 'load');
+    this.renderer.onRestore = () => {
+      for (const id of Object.values(this.worn)) { const it = id && this.byId.get(id); if (it) this.renderer.addGarment(it); }
+      if (this.mode === 'photo' && this.photo) { this.renderer.uploadSource(this.photo, this.photo.width, this.photo.height); if (this.photoMask) this.renderer.setMask(this.photoMask.data, this.photoMask.w, this.photoMask.h); }
+      this.lastSig = ''; this.updateStatus(true);
+    };
     Demo.init();
     $('#app').classList.add('intro-on');
     this.resize(); addEventListener('resize', () => this.resize()); addEventListener('orientationchange', () => setTimeout(() => this.resize(), 300));
@@ -3718,12 +3807,15 @@ const App = {
     this.renderRail();
     this.updateFitbar();
     requestAnimationFrame(t => this.loop(t));
-    // saved wardrobe
+    // saved wardrobe and looks
     Store.all().then(async list => {
       list.sort((a, b) => (b.created || 0) - (a.created || 0));
       for (const rec of list.reverse()) { try { await this.restoreItem(rec); } catch (e) { console.warn('[mirror] could not restore item', e); } }
+      this.looks = await Store.looks();
       this.renderRail();
     });
+    // back online after the engine failed to download: try again
+    addEventListener('online', () => { if (!this.visionReady && !this.visionLoading && this.mode !== 'demo') this.ensureVision(); });
     // platform capabilities (all optional)
     AI.init().then(ok => { this.capabilities.ai = ok; });
     if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { this.capabilities.downloads = d; }).catch(() => {});
@@ -3766,7 +3858,7 @@ const App = {
       this.worn[slot] = id;
       if (slot === 'dress') { this.worn.top = null; this.worn.bottom = null; }
       if (slot === 'top' || slot === 'bottom') this.worn.dress = null;
-      if (slot === 'feet' && this.mode !== 'demo' && !this.feetTold) { this.feetTold = true; setTimeout(() => this.toast('Step back until your feet are in view — shoes show best side-on. Tap the mirror to hide the controls.'), 600); }
+      if (slot === 'feet' && (this.mode === 'live' || this.mode === 'clip') && !this.feetTold) { this.feetTold = true; setTimeout(() => this.toast('Step back until your feet are in view — shoes show best side-on. Tap the mirror to hide the controls.'), 600); }
       if (it.size == null) {
         const saved = it.sample ? Store.get('sample.' + id, null) : null;
         if (saved) { it.size = saved.size; it.adj = saved.adj || it.adj; }
@@ -3774,6 +3866,10 @@ const App = {
       }
       this.active = id;
     }
+    this.syncWorn();
+  },
+  // the renderer holds exactly what's worn; the size shown on the tape belongs to something worn
+  syncWorn() {
     const wornIds = new Set(Object.values(this.worn).filter(Boolean));
     for (const x of this.items) {
       if (wornIds.has(x.id) && !this.renderer.items.has(x.id)) this.renderer.addGarment(x);
@@ -3803,7 +3899,8 @@ const App = {
   // ---------- rendering loop ----------
   resize() {
     const c = $('#stage'), d = Math.min(2, devicePixelRatio || 1);
-    c.width = Math.max(2, Math.round(c.clientWidth * d)); c.height = Math.max(2, Math.round(c.clientHeight * d));
+    this.stageW = Math.max(1, c.clientWidth); this.stageH = Math.max(1, c.clientHeight);
+    c.width = Math.max(2, Math.round(this.stageW * d)); c.height = Math.max(2, Math.round(this.stageH * d));
     this.demoView();
   },
   demoView() {
@@ -3816,64 +3913,105 @@ const App = {
   loop(ts) {
     requestAnimationFrame(t => this.loop(t));
     // the shop-import editor covers the whole screen: leave the GPU to the cut-out work
-    if (document.hidden || !this.renderer || Editor.open_) return;
+    if (document.hidden || !this.renderer || Editor.open_ || this.renderer.lost) return;
     const t = ts / 1000; this.frameNo++;
     const dt = clamp(t - (this.lastT || t), 0, 0.25); this.lastT = t;
     if (this.mode === 'demo') {
       const kp = Demo.draw(t);
       this.body = this.tracker.update(kp, t, true);
-      this.renderer.uploadSource(Demo.canvas, Demo.W, Demo.H);
-      const fb = $('#btnFront'), off = Math.abs(Demo.yaw) > 0.35 && !Demo.spinA;
+      this.renderer.uploadSource(Demo.canvas, Demo.W, Demo.H, false);
+      const fb = this.btnFront || (this.btnFront = $('#btnFront')), off = Math.abs(Demo.yaw) > 0.35 && !Demo.spinA;
       if (fb.hidden === off) fb.hidden = !off;
     } else if (this.mode === 'live' || this.mode === 'clip') this.grab(t);
+    if (this.frameNo % 15 === 0) this.updateStatus();
     const b = this.body;
     this.fade = this.mode === 'photo' ? (b && b.valid ? 1 : 0) : lerp(this.fade, b && b.valid ? 1 : 0, clamp(dt * 9, 0.05, 1));
     const worn = this.wornList(); worn.forEach(w => { w.alpha = this.fade; });
+    // away from the demo, a frame is only drawn when something in it changed: a new camera picture, a new
+    // pose, different clothes or settings (a still photo then costs nothing between changes)
+    if (this.mode !== 'demo') {
+      const S = this.settings, c = this.renderer.canvas;
+      const sig = [this.renderer.srcVer, this.renderer.maskVer, b ? b.serial : 0, this.fade.toFixed(3), JSON.stringify(worn), this.fitMode(), S.mirror, this.facing,
+        c.width, c.height, this.tint.map(v => v.toFixed(3)), S.shade, S.occlusion, S.light, this.skin ? this.skin.map(v => v.toFixed(3)) : ''].join('|');
+      if (sig === this.lastSig) return;
+      this.lastSig = sig;
+    }
     const scene = {
       worn, body: b, shade: this.mode === 'demo' ? 0 : this.settings.shade,
       occ: this.settings.occlusion ? sceneExtras(b, worn, this.mode === 'demo' ? [-0.02, 0.012, 0.03] : this.skin, { occlusion: true, demo: this.mode === 'demo' }) : { caps: [] },
       tint: this.settings.light && this.mode !== 'demo' ? this.tint : [1, 1, 1],
       fit: this.fitMode(),
+      focus: this.mode === 'photo' && b && b.valid ? mid(b.sMid, b.hMid) : null,
       mirror: this.mode === 'live' && this.facing === 'user' && this.settings.mirror,
       bg: [0.055, 0.063, 0.071],
     };
     this.scene = scene;
     this.renderer.render(scene);
-    if (this.frameNo % 15 === 0) this.updateStatus();
   },
   fitMode() {
-    if (this.mode === 'photo') return 'contain';
     if (this.mode === 'demo') return 'cover';
-    const c = $('#stage'), sa = c.clientHeight / Math.max(1, c.clientWidth), fa = this.fh / Math.max(1, this.fw);
-    return Math.max(sa / fa, fa / sa) > 1.45 ? 'contain' : 'cover'; // a landscape stream on a portrait phone: show all of it
+    // fill the whole screen, like the phone's own camera (a 3:4 or 9:16 picture on a phone loses a little at
+    // the sides); a picture much squarer than the screen, or the other way round, is shown whole instead
+    if (!this.settings.fill) return 'contain';
+    const sa = this.stageH / this.stageW, fa = this.fh / Math.max(1, this.fw);
+    return (sa >= 1) === (fa >= 1) && Math.max(sa / fa, fa / sa) <= 1.7 ? 'cover' : 'contain';
+  },
+  // new camera pictures are announced by the video (where supported), so a 120 Hz screen doesn't copy
+  // the same 30 fps frame four times over
+  watchVideo(v) {
+    const tok = (v._vfcTok = (v._vfcTok || 0) + 1);
+    this.newFrame = true;
+    if (!v.requestVideoFrameCallback) { this.vfc = false; return; }
+    this.vfc = true;
+    const cb = () => { if (v._vfcTok !== tok) return; this.newFrame = true; v.requestVideoFrameCallback(cb); };
+    v.requestVideoFrameCallback(cb);
   },
   grab(t) {
     const v = this.mode === 'live' ? $('#cam') : $('#clip');
     if (v.readyState < 2 || !v.videoWidth) return;
-    const s = Math.min(1, 960 / Math.max(v.videoWidth, v.videoHeight));
+    const now = performance.now();
+    if (this.vfc && !this.newFrame && now - (this.lastGrab || 0) < 250) return;
+    this.newFrame = false; this.lastGrab = now;
+    const s = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight));
     const fw = Math.round(v.videoWidth * s), fh = Math.round(v.videoHeight * s);
     if (this.frame.width !== fw || this.frame.height !== fh) { this.frame.width = fw; this.frame.height = fh; this.tracker.reset(); Vision.crop = null; }
     this.fw = fw; this.fh = fh;
     this.fctx.drawImage(v, 0, 0, fw, fh);
-    this.renderer.uploadSource(this.frame, fw, fh);
+    this.renderer.uploadSource(this.frame, fw, fh, this.settings.shade > 0);
     if (this.frameNo % 20 === 1) this.sampleScene();
+    // a result that never comes back (a lost GPU context) mustn't stop tracking for good
+    if (this.busy && now - this.busySince > 3000) this.busy = false;
     if (!this.busy && this.visionReady) this.infer();
   },
+  // body tracking works on a copy no bigger than 512 px: the models look at 192-256 px anyway
+  inferInput() {
+    const s = Math.min(1, 512 / Math.max(this.fw, this.fh));
+    if (s >= 1) return { src: this.frame, w: this.fw, h: this.fh, k: 1 };
+    const w = Math.round(this.fw * s), h = Math.round(this.fh * s);
+    const c = this.inferC || (this.inferC = mkCanvas(w, h));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    c.getContext('2d').drawImage(this.frame, 0, 0, w, h);
+    return { src: c, w, h, k: 1 / s };
+  },
   infer() {
-    this.busy = true;
-    const n = ++this.inferNo;
+    this.busy = true; this.busySince = performance.now();
+    const n = ++this.inferNo, gen = this.modeGen;
     const wantMask = Vision.selfie && (this.measuring || (this.settings.shade > 0 && n % 4 === 0));
-    Vision.pose(this.frame, this.fw, this.fh, { thunder: this.settings.accurate && !!Vision.thunder })
-      .then(async kps => {
+    const inp = this.inferInput();
+    Vision.pose(inp.src, inp.w, inp.h, { thunder: this.settings.accurate && !!Vision.thunder })
+      .then(async raw => {
+        // a result from before a change of mode (or a newer request) belongs to another picture
+        if (gen !== this.modeGen || n !== this.inferNo) return;
+        const kps = inp.k === 1 ? raw : raw.map(k => ({ x: k.x * inp.k, y: k.y * inp.k, s: k.s }));
         this.body = this.tracker.update(kps, performance.now() / 1000);
         this.lastKps = kps;
         if (wantMask) {
-          const m = await Vision.segment(this.frame);
-          if (m) { this.renderer.setMask(m.data, m.w, m.h); if (this.measuring) this.measureFrame(kps, m); }
+          const m = await Vision.segment(inp.src);
+          if (m && gen === this.modeGen) { this.renderer.setMask(m.data, m.w, m.h); if (this.measuring) this.measureFrame(kps, m); }
         }
       })
       .catch(e => { console.warn('[mirror] inference failed', e); })
-      .finally(() => { this.busy = false; });
+      .finally(() => { if (n === this.inferNo) this.busy = false; });
   },
   sampleScene() {
     const src = this.mode === 'photo' ? this.photo : this.frame;
@@ -3911,7 +4049,7 @@ const App = {
         .then(() => { this.visionReady = true; Vision.initSelfie(); if (this.settings.accurate) Vision.initThunder(); return true; })
         .catch(e => { console.error(e); this.visionLoading = null; throw e; });
     }
-    if (!quiet) this.visionLoading.then(() => {}, () => this.setStatus('The fitting engine couldn’t load. Check your connection and try again.', 'warn'));
+    if (!quiet) this.visionLoading.then(() => {}, () => this.setStatus('The fitting engine couldn’t load — tap here to try again', 'warn', () => this.ensureVision()));
     return this.visionLoading;
   },
 
@@ -3922,14 +4060,18 @@ const App = {
     if (was && this.mode === 'demo') setTimeout(() => { if (this.mode === 'demo') this.turnHint(true); }, 500);
   },
   setMode(m) {
-    this.mode = m; this.tracker.reset(); Vision.crop = null; this.body = null; this.renderer.clearMask(); this.analysing = false;
+    this.mode = m; this.modeGen++; this.tracker.reset(); Vision.crop = null; this.body = null; this.renderer.clearMask(); this.analysing = false; this.lastSig = '';
+    this.cancelMeasure(); this.cancelCountdown();
     this.setClean(false);
     const chip = $('#modeChip');
-    chip.textContent = { demo: 'Demo', live: 'Live', photo: 'Photo', clip: 'Clip' }[m]; chip.classList.toggle('live', m === 'live');
+    $('.t', chip).textContent = { demo: 'Demo', live: 'Live', photo: 'Photo', clip: 'Clip' }[m]; chip.classList.toggle('live', m === 'live');
+    chip.setAttribute('aria-label', `${{ demo: 'Demo mannequin', live: 'Live mirror', photo: 'Your photo', clip: 'Your clip' }[m]} — change`);
+    $('#app').classList.toggle('see-through', m !== 'demo');
     $('#btnFlip').hidden = m !== 'live';
     $('#btnSpin').hidden = m !== 'demo';
     if (m !== 'demo') { $('#btnFront').hidden = true; this.turnHint(false); this.hintDone = false; }
     $('#vidCtl').hidden = m !== 'clip';
+    if (m === 'clip') this.clipButton(false);
     if (m !== 'live') this.stopCamera();
     if (m !== 'clip') { const c = $('#clip'); c.pause(); if (c.src) { URL.revokeObjectURL(c.src); c.removeAttribute('src'); c.load(); } }
     // video modes draw into their own frame canvas, never into a loaded photo
@@ -3938,23 +4080,38 @@ const App = {
     if (m === 'demo') { this.tint = [1, 1, 1]; }
     this.updateStatus(true);
   },
-  async startCamera() {
-    this.hideIntro();
+  async startCamera(facing) {
+    this.hideIntro(); $('#blocked').hidden = true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return this.cameraBlocked('unsupported');
+    const tok = ++this.camTok, want = facing || this.facing;
+    const flip = $('#btnFlip'); flip.disabled = true;
     this.setStatus('Asking for the camera…', 'load');
+    this.stopCamera(); // iPhones run one camera at a time
     let stream;
     try {
       const portrait = innerHeight >= innerWidth;
-      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: this.facing, width: { ideal: portrait ? 720 : 1280 }, height: { ideal: portrait ? 1280 : 720 } } });
-    } catch (e) { return this.cameraBlocked(e && e.name); }
-    this.stopCamera();
-    this.stream = stream;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: want, width: { ideal: portrait ? 720 : 1280 }, height: { ideal: portrait ? 1280 : 720 } } });
+    } catch (e) { if (tok === this.camTok) { flip.disabled = false; this.cameraBlocked(e && e.name); } return; }
+    if (tok !== this.camTok) { stream.getTracks().forEach(t => t.stop()); return; } // a newer request won
+    flip.disabled = false;
+    this.stream = stream; this.facing = want;
+    const track = stream.getVideoTracks()[0];
+    if (track) track.onended = () => { if (this.stream === stream && this.mode === 'live') this.setStatus('The camera stopped — tap here to start it again', 'warn', () => this.startCamera()); };
     const v = $('#cam'); v.srcObject = stream; v.muted = true;
     try { await v.play(); } catch (e) { /* autoplay with muted should work */ }
+    this.watchVideo(v);
     this.setMode('live');
     this.ensureVision();
   },
-  stopCamera() { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; $('#cam').srcObject = null; } },
+  stopCamera() { if (this.stream) { const s = this.stream; this.stream = null; s.getTracks().forEach(t => { t.onended = null; t.stop(); }); $('#cam').srcObject = null; } },
+  // back from another app: iOS pauses the video and may end the camera
+  resume() {
+    if (this.mode === 'live') {
+      const tr = this.stream && this.stream.getVideoTracks()[0];
+      if (!tr || tr.readyState === 'ended') this.startCamera(); else $('#cam').play().catch(() => {});
+    } else if (this.mode === 'clip' && !this.clipPaused) $('#clip').play().catch(() => {});
+    this.lastSig = '';
+  },
   cameraBlocked(name) {
     this.setStatus('', 'hide');
     const b = $('#blocked'); b.hidden = false;
@@ -3999,26 +4156,35 @@ const App = {
   },
   async openClip(file) {
     this.hideIntro(); $('#blocked').hidden = true;
-    const c = $('#clip');
-    try {
-      c.pause(); if (c.src) URL.revokeObjectURL(c.src);
-      c.muted = true; c.loop = true;
-      c.src = URL.createObjectURL(file);
-      await new Promise((res, rej) => { c.onloadeddata = res; c.onerror = () => rej(new Error('clip')); setTimeout(res, 4000); });
-      this.setMode('clip'); // keeps the clip's source (only other modes clear it)
-      await c.play().catch(() => {});
-      this.ensureVision();
-    } catch (e) {
-      if (c.src) { URL.revokeObjectURL(c.src); c.removeAttribute('src'); c.load(); }
-      this.toast('That video couldn’t be played here. Try a shorter clip recorded with the camera app.');
-    }
+    const tok = ++this.clipTok, c = $('#clip'), url = URL.createObjectURL(file);
+    this.setStatus('Opening the clip…', 'load');
+    // try the new clip in a scratch player first, so a file that won't play leaves the current view alone
+    const probe = document.createElement('video'); probe.muted = true; probe.playsInline = true; probe.preload = 'auto'; probe.src = url;
+    const ok = await new Promise(res => { probe.onloadeddata = () => res(true); probe.onerror = () => res(false); setTimeout(() => res(probe.readyState >= 2), 6000); });
+    probe.removeAttribute('src'); probe.load();
+    if (tok !== this.clipTok) { URL.revokeObjectURL(url); return; }
+    if (!ok) { URL.revokeObjectURL(url); this.updateStatus(true); this.toast('That video couldn’t be played here. Try a shorter clip recorded with the camera app.'); return; }
+    c.pause(); if (c.src) URL.revokeObjectURL(c.src);
+    c.muted = true; c.loop = true; c.src = url;
+    await new Promise(res => { c.onloadeddata = res; c.onerror = res; setTimeout(res, 4000); });
+    if (tok !== this.clipTok) return;
+    this.setMode('clip'); // keeps the clip's source (only other modes clear it)
+    this.clipPaused = false;
+    await c.play().catch(() => { this.clipPaused = true; });
+    this.clipButton(this.clipPaused);
+    this.watchVideo(c);
+    this.ensureVision();
   },
+  clipButton(paused) { $('#vidCtl').replaceChildren(icon(paused ? 'play' : 'pause'), h('span', {}, paused ? 'Play clip' : 'Pause clip')); },
 
   // ---------- status ----------
-  setStatus(text, kind) {
+  setStatus(text, kind, action) {
     const s = $('#status'); clearTimeout(this.statusT);
+    this.statusAction = action || null;
+    s.classList.toggle('act', !!action);
+    if (action) s.setAttribute('role', 'button'), s.setAttribute('tabindex', '0'); else s.removeAttribute('tabindex'), s.setAttribute('role', 'status');
     if (kind === 'hide' || !text) { s.classList.add('fade'); return; }
-    s.className = 'status' + (kind === 'ok' ? ' ok' : kind === 'warn' ? ' warn' : '');
+    s.className = 'status' + (kind === 'ok' ? ' ok' : kind === 'warn' ? ' warn' : '') + (action ? ' act' : '');
     s.firstElementChild.className = kind === 'load' ? 'spin' : 'dot';
     $('.t', s).textContent = text;
     if (kind === 'ok') this.statusT = setTimeout(() => s.classList.add('fade'), 1800);
@@ -4026,7 +4192,7 @@ const App = {
   updateStatus(force) {
     const m = this.mode;
     if (m === 'demo') { if (force) this.setStatus('', 'hide'); return; }
-    if (this.measuring || this.analysing) return;
+    if (this.measuring || this.analysing || this.statusAction) return;
     if (!this.visionReady) return;
     const b = this.body;
     let key, text, kind;
@@ -4048,10 +4214,11 @@ const App = {
       setTimeout(() => { if (this.mode === 'live') this.toast('Turn round slowly — the clothes follow you to the side and back.'); }, 2500);
     }
   },
+  // stays up long enough to read: longer messages stay longer
   toast(msg) {
     const old = $('.toast'); if (old) old.remove();
     const t = h('div', { class: 'toast', role: 'status' }, msg); $('#app').append(t);
-    setTimeout(() => t.remove(), 3600);
+    setTimeout(() => t.remove(), clamp(1800 + 55 * String(msg).length, 2600, 7000));
   },
 
   // ---------- wardrobe rail ----------
@@ -4062,21 +4229,36 @@ const App = {
     item.thumb = c.toDataURL('image/png'); return item.thumb;
   },
   renderRail() {
-    const r = $('#rail'); r.textContent = '';
+    const r = $('#rail'), keep = r.scrollLeft; r.textContent = '';
     r.append(h('button', { class: 'tag add', id: 'btnAdd', onclick: () => Editor.open() }, h('span', { class: 'plus' }, icon('plus')), h('span', { class: 'nm' }, 'Add from a shop')));
+    if (this.looks.length) {
+      const L = this.looks[0];
+      r.append(h('button', { class: 'tag looks', 'aria-label': `My looks, ${this.looks.length} saved`, onclick: () => this.openLooks() },
+        h('img', { src: this.lookThumb(L), alt: '' }), h('span', { class: 'nm' }, 'My looks'), h('span', { class: 'mt' }, `${this.looks.length} saved`)));
+    }
     const wornIds = new Set(Object.values(this.worn).filter(Boolean));
     const mine = this.items.filter(i => !i.sample), samples = this.items.filter(i => i.sample);
     for (const it of mine.concat(samples)) {
-      const pressed = wornIds.has(it.id);
-      const tag = h('button', { class: 'tag', 'aria-pressed': pressed ? 'true' : 'false', 'aria-label': `${it.name}, ${TYPE_LABEL[it.type]}${pressed ? ', wearing' : ''}`, onclick: () => { this.wear(it.id); this.renderRail(); this.updateFitbar(); } },
+      const pressed = wornIds.has(it.id), active = pressed && this.active === it.id;
+      const size = pressed && it.size && it.size !== 'One size' ? ' · ' + it.size : '';
+      // a worn item: the first tap shows its size on the tape, a tap on the one shown takes it off
+      const tag = h('button', { class: 'tag' + (active ? ' active' : ''), 'aria-pressed': pressed ? 'true' : 'false',
+        'aria-label': `${it.name}, ${TYPE_LABEL[it.type]}${pressed ? ', wearing' + (it.size ? ', size ' + it.size : '') + (active ? ', size shown — tap to take off' : ', tap to show its size') : ''}`,
+        onclick: () => this.tapItem(it.id) },
         h('img', { src: this.thumb(it), alt: '' }), h('span', { class: 'nm' }, it.name),
-        h('span', { class: 'mt' }, `${TYPE_LABEL[it.type]}${pressed && it.size ? (it.size === 'One size' ? '' : ' · ' + it.size) : it.sample ? ' · sample' : ''}`));
-      if (!it.sample) {
-        const ed = h('span', { class: 'edit', role: 'button', 'aria-label': 'Edit ' + it.name, onclick: e => { e.stopPropagation(); this.itemMenu(it.id); } }, icon('pencil'));
-        tag.append(ed);
-      }
-      r.append(tag);
+        h('span', { class: 'mt' }, `${TYPE_LABEL[it.type]}${pressed ? size : it.sample ? ' · sample' : ''}`));
+      if (it.sample) { r.append(tag); continue; }
+      r.append(h('div', { class: 'tagwrap' }, tag, h('button', { class: 'edit', 'aria-label': 'Edit or remove ' + it.name, onclick: () => this.itemMenu(it.id) }, icon('pencil'))));
     }
+    r.scrollLeft = keep;
+  },
+  tapItem(id) {
+    const worn = Object.values(this.worn).includes(id);
+    if (worn && this.active !== id) {
+      this.active = id;
+      if (!this.selTold) { this.selTold = true; this.toast('Showing this item’s size — tap it again to take it off'); }
+    } else this.wear(id);
+    this.renderRail(); this.updateFitbar();
   },
 
   // ---------- size tape ----------
@@ -4087,9 +4269,10 @@ const App = {
     bar.hidden = false; requestAnimationFrame(() => this.demoView());
     const chart = Fit.chartFor(it, this.profile), tape = $('#tape'); tape.textContent = '';
     const rec = Fit.recommend(it, this.profile, chart);
+    const VERDICT = { good: ', good fit', tight: ', too small', loose: ', too big' };
     for (const s of chart.sizes) {
       const v = Fit.verdict(s, it, this.profile, chart);
-      tape.append(h('button', { 'aria-pressed': it.size === s.label ? 'true' : 'false', 'aria-label': `Size ${s.label}${rec === s.label ? ', recommended' : ''}`, onclick: () => { it.size = s.label; this.saveItem(it); this.updateFitbar(); this.renderRail(); } },
+      tape.append(h('button', { 'aria-pressed': it.size === s.label ? 'true' : 'false', 'aria-label': `Size ${s.label}${rec === s.label ? ', recommended' : ''}${VERDICT[v.worst] || ''}`, onclick: () => this.pickSize(it, s.label) },
         s.label, rec === s.label ? h('span', { class: 'rec' }, '★') : null, h('span', { class: 'v ' + (v.worst !== 'unknown' ? v.worst : '') })));
     }
     const cur = chart.sizes.find(s => s.label === it.size);
@@ -4101,27 +4284,39 @@ const App = {
     if (on && tape.scrollWidth > tape.clientWidth) tape.scrollLeft = Math.max(0, on.offsetLeft - (tape.clientWidth - on.offsetWidth) / 2);
   },
 
+  pickSize(it, label) { it.size = label; it.sizeTouched = true; this.saveItem(it); this.updateFitbar(); this.renderRail(); },
+
   // ---------- sheets ----------
+  // behind a sheet, the mirror and its controls are out of reach for taps, keys and screen readers
+  setInert(on) { for (const el of [$('.topbar'), $('.dock'), $('#stage'), $('#intro')]) if (el) { if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); } },
   openSheet(title, build, onClose) {
-    this.closeSheet();
+    const back = this.sheet ? this.sheet.back : document.activeElement;
+    this.closeSheet(true);
     const scrim = h('div', { class: 'scrim', onclick: () => this.closeSheet() });
     const body = h('div', { class: 'body' });
+    const close = h('button', { class: 'iconbtn', 'aria-label': 'Close', onclick: () => this.closeSheet() }, icon('x'));
     const sheet = h('section', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
-      h('div', { class: 'grab' }),
-      h('header', {}, h('h2', {}, title), h('button', { class: 'iconbtn', 'aria-label': 'Close', onclick: () => this.closeSheet() }, icon('x'))), body);
+      h('div', { class: 'grab' }), h('header', {}, h('h2', {}, title), close), body);
     build(body);
     $('#app').append(scrim, sheet);
-    this.sheet = { scrim, sheet, onClose };
+    this.sheet = { scrim, sheet, onClose, back };
+    this.setInert(true);
+    requestAnimationFrame(() => { try { close.focus({ preventScroll: true }); } catch (e) { /* ignore */ } });
     return body;
   },
-  closeSheet() { if (!this.sheet) return; const s = this.sheet; this.sheet = null; s.scrim.remove(); s.sheet.remove(); if (s.onClose) s.onClose(); },
+  closeSheet(swap) {
+    if (!this.sheet) return;
+    const s = this.sheet; this.sheet = null; s.scrim.remove(); s.sheet.remove();
+    if (!swap) { this.setInert(false); if (s.back && s.back.isConnected && s.back.focus) try { s.back.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+    if (s.onClose) s.onClose();
+  },
 
   itemMenu(id) {
     const it = this.byId.get(id); if (!it) return;
     this.openSheet(it.name, body => {
       body.append(
         h('div', { class: 'btnrow' },
-          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); this.wear(id, true); this.active = id; this.renderRail(); this.openFit(); } }, icon('ruler'), 'Size & fit'),
+          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); this.wear(id, true); this.active = id; this.renderRail(); this.updateFitbar(); this.openFit(); } }, icon('ruler'), 'Size & fit'),
           h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); Editor.openItem(it); } }, icon('pencil'), 'Edit cut-out')),
         h('p', { class: 'fine' }, `${TYPE_LABEL[it.type]} · added ${new Date(it.created || Date.now()).toLocaleDateString()}`),
         h('div', { class: 'btnrow', style: 'margin-top:14px' }, h('button', { class: 'btn small', onclick: () => { if (confirm(`Remove “${it.name}” from your wardrobe?`)) { this.closeSheet(); this.removeItem(id); this.toast('Removed from your wardrobe'); } } }, 'Remove from wardrobe')));
@@ -4129,23 +4324,33 @@ const App = {
   },
 
   openFit() {
-    const it = this.active && this.byId.get(this.active);
     const P0 = this.profile;
     this.openSheet('Fit check', body => {
-      const render = () => {
-        body.textContent = '';
-        // measurements
+      // measurements are built once, so typing keeps the keyboard and focus; the size list below redraws
+      const sizesBox = h('div'), tuneBox = h('div');
+      const measures = () => {
         const sec = h('div', { class: 'section' }, h('h3', {}, 'Your measurements', h('span', {}, 'centimetres')));
         const seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Sizing' });
-        for (const [k, l] of [['womens', 'Womenswear'], ['mens', 'Menswear']]) seg.append(h('button', { 'aria-pressed': P0.sizing === k ? 'true' : 'false', onclick: () => { P0.sizing = k; this.saveProfile(); render(); } }, l));
-        const usual = h('select', { class: 'namefield', style: 'flex:0 0 auto;width:auto;height:36px', 'aria-label': 'Your usual size', onchange: e => { P0.usual = e.target.value; this.saveProfile(); render(); } },
+        for (const [k, l] of [['womens', 'Womenswear'], ['mens', 'Menswear']]) seg.append(h('button', { 'aria-pressed': P0.sizing === k ? 'true' : 'false', onclick: () => { P0.sizing = k; this.saveProfile(); rebuild(); } }, l));
+        const usual = h('select', { class: 'namefield', id: 'm-usual', style: 'flex:0 0 auto;width:auto;height:36px', 'aria-label': 'Your usual size', onchange: e => { P0.usual = e.target.value; this.saveProfile(); sizes(); } },
           ...['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => h('option', { value: s, selected: P0.usual === s }, 'Usually ' + s)));
         sec.append(h('div', { class: 'row', style: 'margin-bottom:10px' }, seg, usual));
         const grid = h('div', { class: 'measures' });
         for (const [k, l, u, lo, hi] of [['height', 'Height', 'cm', 100, 230], ['chest', P0.sizing === 'womens' ? 'Bust' : 'Chest', 'cm', 40, 200], ['waist', 'Waist', 'cm', 40, 200], ['hips', 'Hips', 'cm', 40, 200], ['inseam', 'Inseam', 'cm', 40, 120], ['head', 'Head', 'cm', 44, 68], ['shoe', 'Shoe size', 'EU', 30, 50]]) {
-          const inp = h('input', { type: 'number', inputmode: 'decimal', id: 'm-' + k, min: lo, max: hi, step: k === 'shoe' ? 0.5 : 1, value: P0[k] || '', placeholder: '—',
-            onchange: e => { const v = parseFloat(e.target.value); P0[k] = isFinite(v) && v > 0 ? (k === 'shoe' ? Math.round(v * 2) / 2 : Math.round(v)) : null; if (P0.est) delete P0.est[k]; this.saveProfile(); this.refreshSizes(); render(); } });
-          grid.append(h('div', { class: 'measure' + (P0.est && P0.est[k] ? ' est' : '') }, h('label', { for: 'm-' + k }, l), h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap' }, inp, h('span', { class: 'u' }, u))));
+          const box = h('div', { class: 'measure' + (P0.est && P0.est[k] ? ' est' : '') });
+          // text + decimal keypad: "38,5" and "38.5" both work
+          const inp = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', id: 'm-' + k, value: P0[k] || '', placeholder: '—', 'aria-label': `${l} in ${u === 'EU' ? 'EU size' : 'centimetres'}`,
+            onchange: e => {
+              const raw = String(e.target.value).trim(), v = parseFloat(raw.replace(',', '.'));
+              const ok = isFinite(v) && v >= lo && v <= hi;
+              P0[k] = ok ? (k === 'shoe' ? Math.round(v * 2) / 2 : Math.round(v)) : null;
+              e.target.value = P0[k] || '';
+              if (!ok && raw) this.toast(`${l}: enter a number from ${lo} to ${hi}`);
+              if (P0.est) delete P0.est[k]; box.classList.remove('est');
+              this.saveProfile(); sizes();
+            } });
+          box.append(h('label', { for: 'm-' + k }, l), h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap' }, inp, h('span', { class: 'u' }, u)));
+          grid.append(box);
         }
         sec.append(grid);
         const canMeasure = this.mode === 'live' || this.mode === 'photo' || this.mode === 'clip';
@@ -4153,32 +4358,35 @@ const App = {
           h('button', { class: 'btn small', disabled: !canMeasure, onclick: () => this.startMeasure() }, icon('camera'), 'Measure with the camera'),
           !canMeasure ? h('span', { class: 'fine', style: 'margin:0' }, 'Open the mirror or a photo first') : null));
         if (P0.est && Object.keys(P0.est).length) sec.append(h('p', { class: 'note' }, 'Yellow boxes are camera estimates (usually within a few cm). A tape measure is more exact — type over any value.'));
-        body.append(sec);
-        if (!it) { body.append(h('p', { class: 'note' }, 'Pick something from your wardrobe to see which size fits.')); return; }
-        // sizes
+        return sec;
+      };
+      const sizes = () => {
+        sizesBox.textContent = ''; tuneBox.textContent = '';
+        const it = this.active && this.byId.get(this.active);
+        if (!it) { sizesBox.append(h('p', { class: 'note' }, 'Pick something from your wardrobe to see which size fits.')); return; }
         const chart = Fit.chartFor(it, P0);
         const rec = Fit.recommend(it, P0, chart);
         const s2 = h('div', { class: 'section' }, h('h3', {}, it.name, h('span', {}, it.chart ? 'Shop size guide' : `${chart.label} · ${chart.note}`)));
-        const list = h('div', { class: 'sizes' });
+        const list = h('div', { class: 'sizes', role: 'group', 'aria-label': 'Sizes' });
         for (const s of chart.sizes) {
           const v = Fit.verdict(s, it, P0, chart);
           // (a shoe size is its own measurement, so it isn't repeated under the label)
           const ranges = it.type === 'shoes' ? '' : Fit.keysFor(it.type).filter(k => s[k] != null).map(k => `${measLabel(k)} ${Array.isArray(s[k]) ? s[k][0] + '–' + s[k][1] : s[k]}`).join(' · ');
-          list.append(h('button', { 'aria-pressed': it.size === s.label ? 'true' : 'false', onclick: () => { it.size = s.label; this.saveItem(it); this.updateFitbar(); this.renderRail(); render(); } },
+          list.append(h('button', { 'aria-pressed': it.size === s.label ? 'true' : 'false', onclick: () => { this.pickSize(it, s.label); sizes(); } },
             h('span', { class: 'sz' }, s.label, rec === s.label ? h('span', { class: 'badge' }, 'Best') : null, h('small', {}, s.alt || '')),
             h('span', { class: 'vd' }, v.worst === 'unknown' ? ranges : Fit.describe(v), v.worst !== 'unknown' && ranges ? h('small', { style: 'display:block;color:var(--faint);font-size:11px;margin-top:2px' }, ranges) : null),
             h('span', { class: 'mk ' + (v.worst !== 'unknown' ? v.worst : '') })));
         }
         s2.append(list);
         const row = h('div', { class: 'row', style: 'margin-top:10px' });
-        if (AI.ready && AI.images && !ACC_SLOT[it.type]) row.append(h('button', { class: 'btn small', onclick: () => $('#fileGuide').click() }, icon('spark'), 'Read the shop’s size guide'));
-        if (it.chart) row.append(h('button', { class: 'linkbtn', onclick: () => { it.chart = null; const ch = Fit.chartFor(it, P0); it.size = Fit.recommend(it, P0, ch) || Fit.defaultSize(it, P0, ch); this.saveItem(it); this.updateFitbar(); render(); } }, 'Use typical sizes instead'));
+        if (AI.ready && AI.images && !ACC_SLOT[it.type]) row.append(h('button', { class: 'btn small', id: 'btnGuide', disabled: !!this.readingGuide, onclick: () => $('#fileGuide').click() }, icon('spark'), this.readingGuide ? 'Reading the size guide…' : 'Read the shop’s size guide'));
+        if (it.chart) row.append(h('button', { class: 'linkbtn', onclick: () => { it.chart = null; const ch = Fit.chartFor(it, P0); it.size = Fit.recommend(it, P0, ch) || Fit.defaultSize(it, P0, ch); this.saveItem(it); this.updateFitbar(); sizes(); } }, 'Use typical sizes instead'));
         if (row.childNodes.length) s2.append(row);
         if (it.type === 'glasses') s2.append(h('p', { class: 'fine' }, 'Glasses come in one size — use Size below if the frame looks too wide or narrow on you.'));
         else if (it.type === 'shoes') s2.append(h('p', { class: 'fine' }, 'Sizes vary between brands by up to half a size — check the shop’s own chart if you’re between sizes.'));
         else if (it.type === 'hat') s2.append(h('p', { class: 'fine' }, 'Measure round your head just above the ears and eyebrows, where a hat sits.'));
         else if (!it.chart) s2.append(h('p', { class: 'fine' }, AI.ready && AI.images ? 'Brands size differently. Screenshot the size guide on the product page and Claude will read it for this item.' : 'Brands size differently — compare with the size guide on the product page.'));
-        body.append(s2);
+        sizesBox.append(s2);
         // fine-tune
         const s3 = h('div', { class: 'section' }, h('h3', {}, 'Fine-tune the overlay'));
         const st = h('div', { class: 'steppers' });
@@ -4188,38 +4396,39 @@ const App = {
         const knobs = accItem ? [['w', 'Size', 0.03, v => `${Math.round((v - 1) * 100)}%`], ['dy', 'Height', 0.02, v => `${Math.round(-v * 100) || 0}`]]
           : [['w', 'Width', 0.03, v => `${Math.round((v - 1) * 100)}%`], ['l', 'Length', 0.03, v => `${Math.round((v - 1) * 100)}%`], ['dy', 'Height', 0.02, v => `${Math.round(-v * 100) || 0}`]];
         for (const [k, l, step, fmt] of knobs) {
-          const out = h('output', {}, fmt(a[k] ?? (k === 'dy' ? 0 : 1)));
+          const out = h('output', { 'aria-live': 'polite' }, fmt(a[k] ?? (k === 'dy' ? 0 : 1)));
           const set = d => { if (k === 'dy') d = -d; a[k] = clamp((a[k] ?? (k === 'dy' ? 0 : 1)) + d, k === 'dy' ? -0.3 : 0.7, k === 'dy' ? 0.3 : 1.4); out.textContent = fmt(a[k]); this.saveItem(it); };
           st.append(h('div', { class: 'stepper' }, h('label', {}, l), h('div', { class: 'ctl' }, h('button', { 'aria-label': l + ' less', onclick: () => set(-step) }, '−'), out, h('button', { 'aria-label': l + ' more', onclick: () => set(step) }, '+'))));
         }
-        s3.append(st, h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'linkbtn', onclick: () => { it.adj = { w: 1, l: 1, dy: 0 }; this.saveItem(it); render(); } }, 'Reset')));
-        body.append(s3);
+        s3.append(st, h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'linkbtn', onclick: () => { it.adj = { w: 1, l: 1, dy: 0 }; this.saveItem(it); sizes(); } }, 'Reset')));
+        tuneBox.append(s3);
       };
-      this.renderFit = render;
-      render();
+      const rebuild = () => { body.textContent = ''; body.append(measures(), sizesBox, tuneBox); sizes(); };
+      this.renderFit = sizes;
+      rebuild();
     }, () => { this.renderFit = null; });
   },
   refreshSizes() { this.updateFitbar(); },
   saveProfile() { Store.set('profile', this.profile); this.updateFitbar(); },
   async readGuide(file) {
-    const it = this.active && this.byId.get(this.active); if (!it) return;
-    this.toast('Reading the size guide…');
+    const it = this.active && this.byId.get(this.active); if (!it || this.readingGuide) return;
+    this.readingGuide = true; if (this.renderFit) this.renderFit();
     try {
       const c = await Cut.decode(file, 1600); const blob = await canvasToBlob(c, 'image/jpeg', 0.9);
       const chart = await AI.readSizeGuide(blob, it.type);
       it.chart = chart; it.size = Fit.recommend(it, this.profile, chart) || chart.sizes[Math.floor(chart.sizes.length / 2)].label;
       this.saveItem(it); this.updateFitbar();
-      if (this.renderFit) this.renderFit();
       this.toast(`Size guide added — ${chart.sizes.length} sizes`);
     } catch (e) { const m = AI.errorText(e); if (m) this.toast(m); }
+    finally { this.readingGuide = false; if (this.renderFit) this.renderFit(); }
   },
 
   // ---------- camera measurement ----------
   async startMeasure() {
     const P0 = this.profile;
     if (!P0.height) { this.toast('Enter your height first — it sets the scale.'); const i = $('#m-height'); if (i) i.focus(); return; }
-    await this.ensureVision();
-    await Vision.initSelfie();
+    try { await this.ensureVision(); await Vision.initSelfie(); }
+    catch (e) { this.toast('The fitting engine didn’t load — check your connection and try again.'); return; }
     if (!Vision.selfie) { this.toast('Measuring needs the body outline model, which didn’t load.'); return; }
     if (this.mode === 'photo') {
       const f = { kps: this.lastKps, mask: this.photoMask, sw: this.fw, sh: this.fh };
@@ -4240,6 +4449,7 @@ const App = {
     this.setStatus(`Hold still — measuring ${Math.min(100, Math.round(this.measuring.frames.length / 12 * 100))}%`, 'load');
     if (this.measuring.frames.length >= 12) this.finishMeasure(this.measuring.frames);
   },
+  cancelMeasure() { clearTimeout(this.measureTimeout); if (this.measuring) { this.measuring = null; $('#guide').hidden = true; } },
   finishMeasure(frames) {
     clearTimeout(this.measureTimeout);
     this.measuring = null; $('#guide').hidden = true;
@@ -4248,8 +4458,11 @@ const App = {
     const P0 = this.profile; P0.est = P0.est || {};
     for (const k of ['chest', 'waist', 'hips', 'inseam']) { P0[k] = r[k]; P0.est[k] = true; }
     this.saveProfile();
-    for (const it of this.items) if (!it.sizeTouched) it.size = null;
-    for (const id of Object.values(this.worn)) if (id) { const it = this.byId.get(id); it.size = Fit.recommend(it, P0, Fit.chartFor(it, P0)) || it.size || P0.usual; }
+    // sizes you chose yourself stay; the rest follow the new measurements
+    for (const it of this.items) if (!it.sizeTouched && !ACC_SLOT[it.type]) {
+      const rec = Fit.recommend(it, P0, Fit.chartFor(it, P0));
+      if (rec && rec !== it.size) { it.size = rec; this.saveItem(it); }
+    }
     this.updateFitbar(); this.renderRail();
     this.setStatus('Measured — sizes updated', 'ok');
     if (!r.armsOut) this.toast('Tip: hold your arms slightly away from your body for a better chest reading.');
@@ -4258,26 +4471,55 @@ const App = {
 
   // ---------- capture ----------
   shutter() {
-    if (this.timer) {
-      let n = this.timer; const cd = h('div', { class: 'countdown' }, String(n)); $('#app').append(cd);
-      const iv = setInterval(() => { n--; if (n <= 0) { clearInterval(iv); cd.remove(); this.capture(); } else cd.textContent = String(n); }, 1000);
-    } else this.capture();
+    if (this.counting) return this.cancelCountdown(true);
+    if (!this.timer) return this.capture();
+    // the controls step aside while you pose, so the whole mirror shows; a tap anywhere cancels
+    const wasClean = this.clean; this.setClean(true, true);
+    const old = $('.toast'); if (old) old.remove();
+    let n = this.timer; const cd = h('div', { class: 'countdown', role: 'timer', 'aria-live': 'assertive' }, String(n), h('small', {}, 'Tap to cancel')); $('#app').append(cd);
+    const iv = setInterval(() => {
+      n--;
+      if (n <= 0) { this.cancelCountdown(); this.capture().finally(() => { if (!wasClean) this.setClean(false); }); }
+      else cd.firstChild.textContent = String(n);
+    }, 1000);
+    this.counting = { iv, cd, wasClean };
+  },
+  cancelCountdown(restore) {
+    const c = this.counting; if (!c) return;
+    clearInterval(c.iv); c.cd.remove(); this.counting = null;
+    if (restore) { if (!c.wasClean) this.setClean(false); this.toast('Timer cancelled'); }
+  },
+  setTimer(n) {
+    this.timer = n; $('#timerN').textContent = n ? n + 's' : 'Off';
+    $('#btnTimer').setAttribute('aria-label', 'Self-timer: ' + (n ? n + ' seconds' : 'off'));
   },
   async capture() {
     if (!this.scene) return;
-    $('#app').append(h('div', { class: 'flash', onanimationend: e => e.target.remove() }));
+    // (removed after the flash plays, or straight away when motion is reduced and nothing plays)
+    const fl = h('div', { class: 'flash', onanimationend: e => e.target.remove() }); $('#app').append(fl); setTimeout(() => fl.remove(), 700);
     let c;
     try { c = this.renderer.snapshot(this.scene); } catch (e) { return this.toast('Couldn’t capture the look on this device.'); }
     const url = c.toDataURL('image/jpeg', 0.9);
     const blob = await canvasToBlob(c, 'image/jpeg', 0.9).catch(() => null);
-    this.openShot(url, blob);
+    this.openShot(url, blob, c);
   },
-  openShot(url, blob) {
+  openShot(url, blob, canvas) {
     const names = Object.values(this.worn).filter(Boolean).map(id => this.byId.get(id)).map(it => `${it.name} (${TYPE_LABEL[it.type].toLowerCase()}, size ${it.size || '?'})`);
+    const outfit = this.outfitNow();
     this.openSheet('Your look', body => {
       body.append(h('img', { class: 'shot', src: url, alt: 'The captured look' }));
       body.append(h('p', { class: 'fine', style: 'margin-top:8px' }, 'Press and hold the photo to save it to Photos or share it.'));
       const row = h('div', { class: 'btnrow', style: 'margin-top:10px' });
+      // keep this outfit (photo + what's worn, in which sizes) to compare or put back on later
+      let saved = false;
+      const keep = h('button', { class: 'btn grow', onclick: async () => {
+        if (saved) return this.openLooks();
+        keep.disabled = true;
+        const ok = await this.saveLook(canvas, outfit);
+        keep.disabled = false;
+        if (ok) { saved = true; keep.replaceChildren(icon('hanger'), 'Saved — see My looks'); } else this.toast('Couldn’t save the look on this device.');
+      } }, icon('hanger'), 'Save to My looks');
+      if (canvas && outfit.items.length) row.append(keep);
       if (this.capabilities.downloads && blob) row.append(h('button', { class: 'btn grow', onclick: async () => {
         try { const r = await this.capabilities.downloads.save({ filename: 'digital-mirror-look.jpg', data: blob }); if (r && r.status === 'saved') this.toast('Saved'); }
         catch (e) { if (e && e.code !== 'declined') this.toast('Couldn’t save the photo here — press and hold it instead.'); }
@@ -4302,6 +4544,93 @@ const App = {
     });
   },
 
+  // ---------- my looks ----------
+  outfitNow() {
+    const items = [];
+    for (const [slot, id] of Object.entries(this.worn)) { const it = id && this.byId.get(id); if (it) items.push({ id, slot, name: it.name, type: it.type, size: it.size || null }); }
+    return { items };
+  },
+  async saveLook(canvas, outfit) {
+    // a phone-sized copy is plenty for the gallery and keeps the device's storage light
+    const s = Math.min(1, 900 / Math.max(canvas.width, canvas.height));
+    const c = s < 1 ? mkCanvas(Math.round(canvas.width * s), Math.round(canvas.height * s)) : canvas;
+    if (c !== canvas) { const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(canvas, 0, 0, c.width, c.height); }
+    const photo = await canvasToBlob(c, 'image/jpeg', 0.86).catch(() => null);
+    if (!photo) return false;
+    const look = { id: 'l' + Date.now().toString(36), created: Date.now(), photo, items: outfit.items };
+    const ok = await Store.putLook(look);
+    this.looks.unshift(look); // kept for this session even if the device won't store it
+    this.renderRail();
+    if (!ok && !this.warnedStore) { this.warnedStore = true; this.toast('Saved for this session only — this browser isn’t keeping app data.'); }
+    return true;
+  },
+  lookURL(look) { if (!look.url) look.url = URL.createObjectURL(look.photo); return look.url; },
+  lookThumb(look) { return this.lookURL(look); },
+  openLooks() {
+    this.openSheet('My looks', body => {
+      if (!this.looks.length) { body.append(h('p', { class: 'note' }, 'Take a photo of an outfit with the shutter, then tap “Save to My looks” to keep it here.')); return; }
+      body.append(h('p', { class: 'fine', style: 'margin:0 0 12px' }, 'Outfits you saved, newest first. Tap one to see what’s in it, wear it again or share it.'));
+      const grid = h('div', { class: 'looks' });
+      for (const L of this.looks) {
+        const when = new Date(L.created);
+        grid.append(h('button', { class: 'look', 'aria-label': `Look from ${when.toLocaleDateString()}: ${L.items.map(i => i.name).join(', ')}`, onclick: () => this.openLook(L) },
+          h('img', { src: this.lookURL(L), alt: '' }),
+          h('span', {}, when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), h('small', {}, `${L.items.length} item${L.items.length === 1 ? '' : 's'}`))));
+      }
+      body.append(grid);
+    });
+  },
+  openLook(L) {
+    this.openSheet('Saved look', body => {
+      body.append(h('img', { class: 'shot', src: this.lookURL(L), alt: 'The saved look' }));
+      const list = h('ul', { class: 'lookitems' });
+      for (const i of L.items) {
+        const have = this.byId.has(i.id);
+        list.append(h('li', {}, h('span', {}, i.name, h('small', {}, TYPE_LABEL[i.type] || '')), h('b', {}, i.size && i.size !== 'One size' ? i.size : ''), have ? null : h('em', {}, 'removed')));
+      }
+      body.append(list);
+      const row = h('div', { class: 'btnrow', style: 'margin-top:12px' });
+      const missing = L.items.filter(i => !this.byId.has(i.id)).length;
+      row.append(h('button', { class: 'btn primary grow', disabled: missing === L.items.length, onclick: () => { this.wearLook(L); this.closeSheet(); } }, icon('hanger'), 'Wear this look'));
+      if (navigator.canShare) { const f = new File([L.photo], 'digital-mirror-look.jpg', { type: 'image/jpeg' }); if (navigator.canShare({ files: [f] })) row.append(h('button', { class: 'btn grow', onclick: () => navigator.share({ files: [f], title: 'My look' }).catch(() => {}) }, icon('share'), 'Share')); }
+      body.append(row);
+      if (missing) body.append(h('p', { class: 'fine' }, missing === L.items.length ? 'The items in this look were removed from your wardrobe.' : 'Items you removed from your wardrobe are left out.'));
+      body.append(h('div', { class: 'row', style: 'margin-top:14px' }, h('button', { class: 'linkbtn', onclick: async () => {
+        if (!confirm('Delete this saved look?')) return;
+        await Store.delLook(L.id); if (L.url) URL.revokeObjectURL(L.url);
+        this.looks = this.looks.filter(x => x.id !== L.id); this.renderRail();
+        if (this.looks.length) this.openLooks(); else this.closeSheet();
+        this.toast('Look deleted');
+      } }, 'Delete this look'), h('span', { class: 'fine', style: 'margin:0' }, new Date(L.created).toLocaleString())));
+    });
+  },
+  wearLook(L) {
+    for (const k in this.worn) this.worn[k] = null;
+    let first = null;
+    for (const i of L.items) {
+      const it = this.byId.get(i.id); if (!it) continue;
+      if (i.size) it.size = i.size;
+      this.wear(i.id, true); first = first || i.id;
+    }
+    this.syncWorn();
+    this.active = this.worn.top || this.worn.dress || this.worn.outer || this.worn.bottom || first;
+    this.renderRail(); this.updateFitbar();
+    this.toast('Wearing your saved look');
+  },
+
+  // ---------- modes ----------
+  openModes() {
+    this.openSheet('Try on with', body => {
+      const opt = (ic, title, sub, fn, on) => h('button', { class: 'modeopt' + (on ? ' on' : ''), 'aria-current': on ? 'true' : null, onclick: () => { this.closeSheet(); fn(); } },
+        icon(ic), h('span', {}, title, h('small', {}, sub)));
+      body.append(h('div', { class: 'modes' },
+        opt('camera', 'Live mirror', 'The camera, like a mirror. Turn round and the clothes follow.', () => this.startCamera(), this.mode === 'live'),
+        opt('photo', 'A photo of you', 'Take one now or choose one — head to hips or further.', () => $('#filePhoto').click(), this.mode === 'photo'),
+        opt('clip', 'A short clip', 'A video of you turning round, played on a loop.', () => $('#fileClip').click(), this.mode === 'clip'),
+        opt('hanger', 'Demo mannequin', 'Try things on a mannequin you can spin round.', () => this.setMode('demo'), this.mode === 'demo')));
+    });
+  },
+
   // ---------- settings ----------
   openMenu() {
     const S = this.settings;
@@ -4312,41 +4641,57 @@ const App = {
       };
       body.append(h('div', { class: 'section' }, h('h3', {}, 'Mirror'),
         tog('mirror', 'Mirror image', 'Show the front camera like a mirror. Saved photos are never flipped.'),
+        tog('fill', 'Fill the screen', 'Camera and photos edge to edge, trimming a little at the sides. Off shows the whole picture. Saved photos are always the whole picture.'),
         tog('light', 'Match the room light', 'Tints clothes to the colour and brightness of your room.'),
         tog('occlusion', 'Hands and face in front', 'Keeps your hands, neck and face on top of the clothes.'),
         h('div', { class: 'toggle' }, h('span', {}, 'Real folds and shadows', h('small', {}, 'Borrows the creases of what you’re wearing.')),
           h('input', { type: 'range', min: 0, max: 0.6, step: 0.05, value: S.shade, style: 'max-width:140px', 'aria-label': 'Real folds and shadows', oninput: e => { S.shade = +e.target.value; Store.set('settings', S); } })),
-        tog('accurate', 'Accurate tracking', 'Steadier tracking with a larger model — a one-time download of about 17 MB.', () => { if (S.accurate) Vision.initThunder(); })));
+        tog('accurate', 'Accurate tracking', 'Steadier tracking with a larger model — a one-time download of about 17 MB.', () => this.toggleAccurate())));
       body.append(h('div', { class: 'section' }, h('h3', {}, 'Try on with'),
         h('div', { class: 'btnrow' },
-          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); $('#blocked').hidden = true; this.startCamera(); } }, icon('camera'), 'Live mirror'),
-          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); $('#filePhoto').click(); } }, icon('photo'), 'A photo'),
-          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); $('#fileClip').click(); } }, icon('clip'), 'A clip'),
-          h('button', { class: 'btn grow', onclick: () => { this.closeSheet(); this.setMode('demo'); } }, icon('hanger'), 'Demo mannequin'))));
+          h('button', { class: 'btn grow', onclick: () => this.openModes() }, icon('camera'), 'Mirror, photo, clip or demo'),
+          h('button', { class: 'btn grow', onclick: () => this.openLooks() }, icon('hanger'), `My looks${this.looks.length ? ' (' + this.looks.length + ')' : ''}`))));
       body.append(h('div', { class: 'section' }, h('h3', {}, 'Privacy'),
         h('p', { class: 'fine', style: 'margin:0 0 10px' }, 'The camera, your photos and your measurements stay on this device. An image goes to Claude only when you tap Identify, read a size guide or ask the stylist.'),
         h('button', { class: 'btn small', onclick: async () => { if (!confirm('Delete your wardrobe and measurements from this device?')) return; for (const it of this.items.filter(i => !i.sample)) await Store.del(it.id); this.items.filter(i => !i.sample).forEach(i => this.removeItem(i.id, true)); this.profile = { sizing: 'womens', usual: 'M', est: {} }; Store.set('profile', this.profile); this.renderRail(); this.updateFitbar(); this.closeSheet(); this.toast('Your data was removed from this device'); } }, 'Delete my data')));
     });
   },
 
+  async toggleAccurate() {
+    const S = this.settings;
+    if (!S.accurate) { this.toast('Standard tracking'); return; }
+    if (Vision.thunder) { this.toast('Accurate tracking is on'); return; }
+    Vision.thunderFailed = false; // a failed download is tried again
+    this.setStatus('Downloading accurate tracking (about 17 MB)…', 'load');
+    try { await this.ensureVision(true); } catch (e) { /* reported below */ }
+    const ok = await Vision.initThunder();
+    if (ok) { this.setStatus('Accurate tracking is on', 'ok'); }
+    else { S.accurate = false; Store.set('settings', S); this.setStatus('', 'hide'); this.toast('Couldn’t download accurate tracking — check your connection. Using standard tracking.'); const sw = $('.sheet .switch[aria-label="Accurate tracking"]'); if (sw) sw.setAttribute('aria-checked', 'false'); }
+    this.updateStatus(true);
+  },
   bind() {
     $('#btnStart').onclick = () => this.startCamera();
+    $('#modeChip').onclick = () => this.openModes();
+    const st0 = $('#status');
+    st0.onclick = () => { const a = this.statusAction; if (a) { this.statusAction = null; a(); } };
+    st0.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && this.statusAction) { e.preventDefault(); st0.onclick(); } };
     $('#btnPhotoMode').onclick = () => $('#filePhoto').click();
     $('#btnLook').onclick = () => this.hideIntro();
-    $('#btnFlip').onclick = () => { this.facing = this.facing === 'user' ? 'environment' : 'user'; this.startCamera(); };
+    $('#btnFlip').onclick = () => this.startCamera(this.facing === 'user' ? 'environment' : 'user');
     $('#btnMenu').onclick = () => this.openMenu();
     $('#btnFit').onclick = () => this.openFit();
     $('#fitPill').onclick = () => this.openFit();
     $('#btnShutter').onclick = () => this.shutter();
-    $('#btnTimer').onclick = () => { this.timer = this.timer === 0 ? 3 : this.timer === 3 ? 10 : 0; $('#timerN').textContent = this.timer ? this.timer + 's' : 'Off'; };
+    $('#btnTimer').onclick = () => { const n = this.timer === 0 ? 3 : this.timer === 3 ? 10 : 0; this.setTimer(n); this.toast(n ? `Self-timer ${n} seconds — tap the shutter, then step back` : 'Self-timer off'); };
     $('#blkPhoto').onclick = () => { const f = $('#filePhoto'); f.setAttribute('capture', 'user'); f.click(); setTimeout(() => f.removeAttribute('capture'), 1000); };
     $('#blkClip').onclick = () => { const f = $('#fileClip'); f.setAttribute('capture', 'user'); f.click(); setTimeout(() => f.removeAttribute('capture'), 1000); };
     $('#blkClose').onclick = () => { $('#blocked').hidden = true; this.setMode('demo'); };
     $('#filePhoto').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) this.openPhoto(f); };
     $('#fileClip').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) this.openClip(f); };
     $('#fileGuide').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) this.readGuide(f); };
-    $('#vidCtl').onclick = () => { const c = $('#clip'); if (c.paused) { c.play(); $('#vidCtl').replaceChildren(icon('pause'), h('span', {}, 'Pause clip')); } else { c.pause(); $('#vidCtl').replaceChildren(icon('play'), h('span', {}, 'Play clip')); } };
-    document.addEventListener('visibilitychange', () => { if (document.hidden && this.mode === 'live') { /* keep stream; frames pause */ } });
+    $('#vidCtl').onclick = () => { const c = $('#clip'); if (c.paused) { this.clipPaused = false; c.play().catch(() => {}); this.clipButton(false); } else { this.clipPaused = true; c.pause(); this.clipButton(true); } };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.resume(); });
+    addEventListener('pageshow', e => { if (e.persisted) this.resume(); });
     addEventListener('keydown', e => {
       if (e.key === 'Escape') { if (this.sheet) this.closeSheet(); else if (Editor.open_) Editor.close(); return; }
       // turn the mannequin with the arrow keys
@@ -4369,16 +4714,17 @@ const App = {
     st.addEventListener('pointerup', e => {
       const t = tap; tap = null;
       if (!t || this.mode === 'demo' || this.sheet || Editor.open_) return;
-      if (Math.hypot(e.clientX - t.x, e.clientY - t.y) < 12 && performance.now() - t.t < 500) this.setClean(!this.clean);
+      if (Math.hypot(e.clientX - t.x, e.clientY - t.y) >= 12 || performance.now() - t.t >= 500) return;
+      if (this.counting) this.cancelCountdown(true); else this.setClean(!this.clean);
     });
     $('#btnSpin').onclick = () => { if (this.mode !== 'demo') this.setMode('demo'); Demo.spin(); this.turnHint(false); };
     $('#btnFront').onclick = () => Demo.face();
   },
   // controls out of the way, so the whole mirror (feet and shoes included) shows
-  setClean(on) {
+  setClean(on, quiet) {
     this.clean = !!on;
     $('#app').classList.toggle('clean', this.clean);
-    if (this.clean && !this.cleanTold) { this.cleanTold = true; this.toast('Tap again to bring the controls back'); }
+    if (this.clean && !quiet && !this.cleanTold) { this.cleanTold = true; this.toast('Tap again to bring the controls back'); }
   },
   // "drag to turn" hint over the mannequin, shown once the intro card is out of the way
   turnHint(on) {
@@ -4402,11 +4748,12 @@ const EDIT_TYPES = ['top', 'outer', 'dress', 'bottom', 'skirt', 'hat', 'glasses'
 const ACC_KEYS = { hat: ['bandL', 'bandR'], glasses: ['lensL', 'lensR'], shoes: ['heel', 'toe'] };
 const noSleeves = t => t === 'bottom' || t === 'skirt' || !!ACC_SLOT[t];
 const Editor = {
-  open_: false, page: null, st: null, tool: 'points', brush: 18, undo: [],
+  open_: false, page: null, st: null, tool: 'points', brush: 18, undo: [], tok: 0,
 
   open() {
     this.close(true);
     this.open_ = true;
+    this.back = document.activeElement; App.setInert(true);
     const page = h('section', { class: 'page', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Add from a shop' });
     page.append(h('header', {}, h('button', { class: 'btn', onclick: () => this.close() }, 'Cancel'), h('h2', {}, 'Add from a shop'), h('span', { style: 'width:74px' })));
     const scroll = h('div', { class: 'scroll' });
@@ -4417,8 +4764,12 @@ const Editor = {
   },
   close(silent) {
     if (this.page) this.page.remove();
+    this.tok++; // a cut-out still running belongs to the closed editor
+    if (this.ro) { this.ro.disconnect(); this.ro = null; }
+    // let go of the photo-sized buffers
     this.page = null; this.open_ = false; this.st = null; this.undo = [];
-    if (!silent) App.renderRail();
+    this.pv = this.pvx = this.srcData = this.pvData = this.cv = this.board = this.origAlpha = null;
+    if (!silent) { App.setInert(false); App.renderRail(); if (this.back && this.back.isConnected) try { this.back.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
   },
   showPick(msg) {
     const s = this.scroll; s.textContent = '';
@@ -4462,19 +4813,23 @@ const Editor = {
     this.scroll.append(h('div', { class: 'busy' }, h('div', { class: 'spin' }), this.busyT));
   },
   async load(file) {
+    const tok = ++this.tok, stale = () => tok !== this.tok || !this.open_;
     this.busy('Opening the photo…');
     let src;
-    try { src = await Cut.decode(file, 1400); } catch (e) { return this.showPick(e.message || 'That file couldn’t be opened as an image.'); }
+    try { src = await Cut.decode(file, 1400); } catch (e) { if (!stale()) this.showPick(e.message || 'That file couldn’t be opened as an image.'); return; }
+    if (stale()) return;
     try {
       await App.ensureVision(true).catch(() => null);
-      const st = await autoGarment(src, t => { if (this.busyT) this.busyT.textContent = t; });
+      if (stale()) return;
+      const st = await autoGarment(src, t => { if (this.busyT && !stale()) this.busyT.textContent = t; });
+      if (stale()) return;
       st.name = ''; st.manualPts = {}; st.erased = new Uint8Array(st.w * st.h); st.source = src;
       this.st = st;
       this.recompute();
       this.showEdit();
     } catch (e) {
       console.error(e);
-      this.showPick('Something went wrong while cutting out the garment. Try another photo.');
+      if (!stale()) this.showPick('Something went wrong while cutting out the item. Try another photo.');
     }
   },
   openItem(item) {
